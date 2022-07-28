@@ -37,9 +37,10 @@ DWORD monitorFunc(LPVOID lpThreadParameter) {
 
 		if (gameHANDLE == NULL) {
 			g_glg->m_bnSun.EnableWindow(FALSE);
-		}
-		else {
+			g_glg->m_bnKill.EnableWindow(FALSE);
+		}else {
 			g_glg->m_bnSun.EnableWindow(TRUE);
+			g_glg->m_bnKill.EnableWindow(TRUE);
 		}
 		// 睡眠一秒钟
 		Sleep(1000);
@@ -92,10 +93,18 @@ C植物大战僵尸辅助Dlg::C植物大战僵尸辅助Dlg(CWnd* pParent /*=null
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
 }
 
+/*
+	
+	主动 - （将页面的按钮事件ID 和 自定义的CButton绑定在一起！）
+
+*/
 void C植物大战僵尸辅助Dlg::DoDataExchange(CDataExchange* pDX)
 {
 	CDialogEx::DoDataExchange(pDX);
+
 	DDX_Control(pDX, IDC_SUN, m_bnSun);
+
+	DDX_Control(pDX, IDC_kill, m_bnKill);
 }
 
 BEGIN_MESSAGE_MAP(C植物大战僵尸辅助Dlg, CDialogEx)

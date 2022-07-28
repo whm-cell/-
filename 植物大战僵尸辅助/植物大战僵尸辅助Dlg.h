@@ -46,6 +46,9 @@ private:
 	// 无限阳光
 	CButton m_bnSun;
 
+	// 秒杀血量
+	CButton m_bnKill;
+
 
 	// 保存线程的句柄（用全局变量，不会回收）
 	HANDLE m_monitorThread;
