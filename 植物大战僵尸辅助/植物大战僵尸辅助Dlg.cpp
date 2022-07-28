@@ -21,7 +21,39 @@ CString str; \
 str.Format(CString(fmt), __VA_ARGS__);\
 AfxMessageBox(str);
 
-C植物大战僵尸辅助Dlg* g_glg;
+// 加static 表示 只允许当前类可以访问
+static C植物大战僵尸辅助Dlg* g_glg;
+
+static HANDLE g_processHandle;
+
+
+// 将某个值写入植物大战僵尸内存（后面的可变参数是地址链，要以-1结尾）
+void WriteMemory(void* value, DWORD valueSize, ...) {
+	if (value == NULL || valueSize == 0 || g_processHandle == NULL) return;
+
+	DWORD tempValue = 0;
+
+	va_list addresses;
+	va_start(addresses, valueSize);
+	DWORD offset = 0;
+	DWORD lastAddress = 0;
+	while ((offset = va_arg(addresses, DWORD)) != -1) {
+		lastAddress = tempValue + offset;
+		::ReadProcessMemory(g_processHandle, (LPCVOID)lastAddress, &tempValue, sizeof(DWORD), NULL);
+	}
+	va_end(addresses);
+
+	::WriteProcessMemory(g_processHandle, (LPVOID)lastAddress, value, valueSize, NULL);
+}
+
+void WriteMemory(void* value, DWORD valueSize, DWORD address) {
+	WriteMemory(value, valueSize, address, -1);
+}
+
+
+
+
+
 /*
 	用来监控游戏的线程！
 */
@@ -32,15 +64,33 @@ DWORD monitorFunc(LPVOID lpThreadParameter) {
 		// 使用windows函数判断游戏是否打开 FindWindow
 		// 如何找应用的  名称
 
-		// gameHANDLE 为游戏植物大战僵尸的句柄
-		HANDLE gameHANDLE = FindWindow(CString("MainWindow"), CString("植物大战僵尸中文版"));
-
-		if (gameHANDLE == NULL) {
+		// gameHANDLE 为游戏植物大战僵尸（窗口）的句柄
+		HWND game窗口Handle = FindWindow(CString("MainWindow"), CString("植物大战僵尸中文版"));
+		
+		if (game窗口Handle == NULL) {
+			g_glg->m_bnSun.SetCheck(FALSE);
+			g_glg->m_bnKill.SetCheck(FALSE);
 			g_glg->m_bnSun.EnableWindow(FALSE);
 			g_glg->m_bnKill.EnableWindow(FALSE);
-		}else {
+
+			// 清空  g_processhandle 保证 elseif 执行的唯一性
+			g_processHandle = NULL;
+
+		}else if(g_processHandle == NULL) { // 保证全局函数  进程句柄为空的时候，才会浸入！
 			g_glg->m_bnSun.EnableWindow(TRUE);
 			g_glg->m_bnKill.EnableWindow(TRUE);
+
+			// 获取植物大战僵尸的进程ID
+			DWORD pid;
+
+			// PID 先定义了4个字节 ， 然后把地址传递进下边的方法内 ，然后最后会给 pid的内存地址赋值
+			GetWindowThreadProcessId(game窗口Handle, &pid);
+
+			// 获取进行ID 
+			//  PROCESS_ALL_ACCESS 权限 
+			//  获取职务大战僵尸的句柄！
+			g_processHandle = ::OpenProcess(PROCESS_ALL_ACCESS, FALSE, pid);
+
 		}
 		// 睡眠一秒钟
 		Sleep(1000);
@@ -274,6 +324,39 @@ void C植物大战僵尸辅助Dlg::onBtnClickedCourse() {
 
 void C植物大战僵尸辅助Dlg::OnBnClickedkill()
 {
+	BOOL s = m_bnKill.GetCheck();
+
+	if (s) {
+		// true的时候  就需要秒杀僵尸了！
+		// 写进程内存，写进程句柄。 
+		// 需要拿到植物大战僵尸的句柄
+
+		// 需要写入的字节
+		BYTE data[] = {0xFF,0x90 ,0x90 };
+
+
+		// 0x00531319 为开始写内存的起始 内存地址（这个操作是将只读的16进制字节写入（覆盖）到从0x00531319开始的后三个字节内）
+
+		WriteMemory(&data, sizeof(data), 0x00531310);
+
+	}
+	else {
+		// false 不需要秒杀僵尸
+			// 需要写入的字节
+		BYTE data[] = { 0x7c,0x24 ,0x20 };
+
+
+		// 
+		WriteMemory(&data, sizeof(data), 0x00531310);
+	}
+
+
+
+
+
+
+
+
 	// TODO: 在此添加控件通知处理程序代码
 
 	// log("ajs");
