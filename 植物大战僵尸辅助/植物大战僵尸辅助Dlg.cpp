@@ -70,8 +70,12 @@ DWORD monitorFunc(LPVOID lpThreadParameter) {
 		if (game窗口Handle == NULL) {
 			g_glg->m_bnSun.SetCheck(FALSE);
 			g_glg->m_bnKill.SetCheck(FALSE);
+			g_glg->m_houtai.SetCheck(FALSE);
+
+
 			g_glg->m_bnSun.EnableWindow(FALSE);
 			g_glg->m_bnKill.EnableWindow(FALSE);
+			g_glg->m_houtai.EnableWindow(FALSE);
 
 			// 清空  g_processhandle 保证 elseif 执行的唯一性
 			g_processHandle = NULL;
@@ -79,6 +83,8 @@ DWORD monitorFunc(LPVOID lpThreadParameter) {
 		}else if(g_processHandle == NULL) { // 保证全局函数  进程句柄为空的时候，才会浸入！
 			g_glg->m_bnSun.EnableWindow(TRUE);
 			g_glg->m_bnKill.EnableWindow(TRUE);
+			g_glg->m_houtai.EnableWindow(TRUE);
+
 
 			// 获取植物大战僵尸的进程ID
 			DWORD pid;
@@ -92,6 +98,42 @@ DWORD monitorFunc(LPVOID lpThreadParameter) {
 			g_processHandle = ::OpenProcess(PROCESS_ALL_ACCESS, FALSE, pid);
 
 		}
+
+		// 无限太阳
+		if (g_glg->m_bnSun.GetCheck()) {
+		
+			// word  2个字节   dword 4个字节
+			// WriteMemory(&value,sizeof(value),0x11);
+			// 第一个参数为： 9990的地址值 ， 9990的长度 ， 阳光的地址值
+
+
+			// 这里每次  阳光的地址值是会变的！
+			/*
+			证明 植物大战僵尸里的 阳光的变量是局部变量！
+
+			- 全局变量的地址值是固定死的！
+
+
+			[0x100]  取出这个地址下 存储的东西（有可能存储的地址值有可能存得是值！）
+
+			[0x100] + 0x4   
+					-> 这个为0x100存储的地址值下的第二个成员变量的地址值。
+					-> 也就是sun对象的地址值！
+
+
+			[[0x100] + 0x4]+ 0x8 
+					-> 就是sun对象的地址值下的第三个成员变量 
+					-> 也就是value的地址值。 
+
+
+					-> 找到阳光的偏移地址！
+
+			*/
+			DWORD value = 9990;
+			WriteMemory(&value,sizeof(value), 0x6A9EC0, 0x320, 0x8, 0x0, 0x8, 0x144, 0x2c, 0x5560, -1);
+			
+		}
+
 		// 睡眠一秒钟
 		Sleep(1000);
 	
@@ -155,6 +197,8 @@ void C植物大战僵尸辅助Dlg::DoDataExchange(CDataExchange* pDX)
 	DDX_Control(pDX, IDC_SUN, m_bnSun);
 
 	DDX_Control(pDX, IDC_kill, m_bnKill);
+	DDX_Control(pDX, IDC_houtai_run, m_houtai);
+	DDX_Control(pDX, IDC_NOT_CD, m_not_cd);
 }
 
 BEGIN_MESSAGE_MAP(C植物大战僵尸辅助Dlg, CDialogEx)
@@ -166,6 +210,8 @@ BEGIN_MESSAGE_MAP(C植物大战僵尸辅助Dlg, CDialogEx)
 	ON_BN_CLICKED(IDC_COURSE, &C植物大战僵尸辅助Dlg::onBtnClickedCourse)
 	ON_BN_CLICKED(IDC_kill, &C植物大战僵尸辅助Dlg::OnBnClickedkill)
 	ON_BN_CLICKED(IDC_SUN, &C植物大战僵尸辅助Dlg::OnBnClickedSun)
+	ON_BN_CLICKED(IDC_houtai_run, &C植物大战僵尸辅助Dlg::OnBnClickedhoutairun)
+	ON_BN_CLICKED(IDC_NOT_CD, &C植物大战僵尸辅助Dlg::OnBnClickedNotCd)
 END_MESSAGE_MAP()
 
 
@@ -290,7 +336,7 @@ void C植物大战僵尸辅助Dlg::onBtnClickedCourse() {
 	// 两个冒号是全局作用域
 	::ShellExecute(NULL,
 		CString("open"),
-		CString("https://blog.csdn.net/lq724445056/article/details/123655259"),
+		CString("https://github.com/whm-cell/-"),
 		NULL, NULL, SW_NORMAL);
 
 
@@ -334,20 +380,26 @@ void C植物大战僵尸辅助Dlg::OnBnClickedkill()
 		// 需要写入的字节
 		BYTE data[] = {0xFF,0x90 ,0x90 };
 
-
 		// 0x00531319 为开始写内存的起始 内存地址（这个操作是将只读的16进制字节写入（覆盖）到从0x00531319开始的后三个字节内）
 
 		WriteMemory(&data, sizeof(data), 0x00531310);
 
+		// 戴帽子的僵尸
+		BYTE data帽子[] = {0x90,0x90};
+		DWORD address帽子 = 0x00531066;
+		WriteMemory(&data帽子, sizeof(data帽子), address帽子);
+	
 	}
 	else {
 		// false 不需要秒杀僵尸
 			// 需要写入的字节
 		BYTE data[] = { 0x7c,0x24 ,0x20 };
 
-
-		// 
 		WriteMemory(&data, sizeof(data), 0x00531310);
+		BYTE data帽子[] = { 0x75, 0x11 };
+		DWORD address帽子 = 0x00531066;
+		WriteMemory(&data帽子, sizeof(data帽子), address帽子);
+
 	}
 
 
@@ -404,4 +456,27 @@ void C植物大战僵尸辅助Dlg::OnBnClickedSun()
 	else {
 		log("没有勾选");
 	}*/
+}
+
+
+void C植物大战僵尸辅助Dlg::OnBnClickedhoutairun()
+{
+
+	DWORD address = 0x54E1C2;
+	if (this->m_houtai.GetCheck()) {
+		// 后台运行
+		BYTE data[] = {0x90,0x90 ,0x90 };
+		WriteMemory(&data, sizeof(data), address);
+	}
+	else {
+		// 后台运行
+		BYTE data[] = { 0x0F, 0x95, 0xC0 };
+		WriteMemory(&data, sizeof(data), address);
+	}
+}
+
+
+void C植物大战僵尸辅助Dlg::OnBnClickedNotCd()
+{
+	// TODO: 在此添加控件通知处理程序代码
 }

@@ -42,6 +42,9 @@ protected:
 	afx_msg void OnBnClickedkill();
 //public:
 	afx_msg void OnBnClickedSun();
+
+	afx_msg void OnBnClickedhoutairun();
+	afx_msg void OnBnClickedNotCd();
 private:
 	// 无限阳光
 	CButton m_bnSun;
@@ -49,8 +52,10 @@ private:
 	// 秒杀血量
 	CButton m_bnKill;
 
-
 	// 保存线程的句柄（用全局变量，不会回收）
 	HANDLE m_monitorThread;
 
+	CButton m_houtai;
+	
+	CButton m_not_cd;
 };
